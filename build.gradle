@@ -1,0 +1,48 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+apply plugin:'base'
+
+defaultTasks 'assemble'
+
+// Version to fetch dependencies for, and to inject into http.rb
+def jettyVersion = '9.1.3.v20140225'
+
+configurations {
+  build
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  build "org.eclipse.jetty.aggregate:jetty-all:${jettyVersion}"
+}
+
+task copyPlugin(type: Copy) {
+  from('http.rb') {
+    filter(ReplaceTokens, tokens: [version: jettyVersion])
+  }
+  into "${buildDir}/plugins/logstash/inputs"
+}
+
+task copyDeps(type: Copy) {
+  from configurations.build
+  into "${buildDir}/vendor/jar/jetty-${jettyVersion}"
+}
+
+assemble.dependsOn copyPlugin, copyDeps
+
+task install(type: Copy, dependsOn: assemble)
+
+// Runtime check for the installDir property
+gradle.taskGraph.whenReady { graph ->
+  if ( graph.hasTask(install) ){
+    if( project.hasProperty('installDir')) {
+      install.from buildDir
+      install.into project.installDir 
+    } else {
+      throw new InvalidUserDataException('Missing: -PinstallDir=')
+    }
+  }
+}
