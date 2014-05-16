@@ -26,9 +26,6 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
   # The port to listen on.
   config :port, :validate => :number, :required => true
 
-  # Whether to create a new event for each line in the POST body.
-  config :multievent, :validate => :boolean, :default => false
-
   def initialize(*args)
     super(*args)
   end # def initialize
@@ -47,21 +44,10 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
           .useDelimiter("\\A")
         body = scanner.hasNext() ? scanner.next() : ''
 
-        msgs = Array.new
-        if @multievent
-          body.each_line do |line|
-            msgs.push line.chomp
-          end
-        else
-          msgs.push body
-        end
-
-        msgs.each do |msg|
-          @codec.clone.decode(msg) do |event|
-            @parent.decorate(event)
-            event["host"] = httpRequest.getRemoteAddr()
-            @output_queue << event
-          end
+        @codec.clone.decode(body) do |event|
+          @parent.decorate(event)
+          event["host"] = httpRequest.getRemoteAddr()
+          @output_queue << event
         end
 
       when 'GET'
@@ -83,7 +69,6 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
     def setupInput(parent, output_queue)
       @parent = parent
       @codec = parent.instance_variable_get(:@codec)
-      @multievent = parent.instance_variable_get(:@multievent)
       @output_queue = output_queue
     end
   end
