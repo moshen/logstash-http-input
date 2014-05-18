@@ -18,7 +18,7 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
   config_name "http"
   milestone 0
 
-  default :codec, "json"
+  default :codec, "plain"
 
   # The address to listen on.
   config :host, :validate => :string, :default => "0.0.0.0"
