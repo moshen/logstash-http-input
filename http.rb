@@ -45,11 +45,12 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
         httpResponse.setStatus(200)
         scanner = Java::java.util.Scanner.new(httpRequest.getInputStream(), "UTF-8")
           .useDelimiter("\\A")
-        body = scanner.hasNext() ? scanner.next() : ''
 
-        @codec.clone.decode(body) do |event|
-          @parent.decorate(event)
-          @output_queue << event
+        if scanner.hasNext()
+          @codec.clone.decode(scanner.next()) do |event|
+            @parent.decorate(event)
+            @output_queue << event
+          end
         end
 
       else
