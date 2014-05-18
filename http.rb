@@ -49,8 +49,18 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
         if scanner.hasNext()
           @codec.clone.decode(scanner.next()) do |event|
             @parent.decorate(event)
+            event["host"] = httpRequest.getRemoteAddr()
             @output_queue << event
           end
+        end
+
+      when 'GET'
+        ka = httpRequest.getHeader('Connection')
+        if ka and ka.downcase == 'keep-alive'
+          httpResponse.setStatus(200)
+        else
+          httpResponse.addHeader('Connection', 'Keep-Alive')
+          httpResponse.setStatus(501)
         end
 
       else
