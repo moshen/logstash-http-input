@@ -26,6 +26,9 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
   # The port to listen on.
   config :port, :validate => :number, :required => true
 
+  # Max form content size in bytes. Set to -1 to disable.
+  config :maxFormSize, :validate => :number, :default => 200000
+
   def initialize(*args)
     super(*args)
   end # def initialize
@@ -72,6 +75,10 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
   def run(output_queue)
     @server = Java::org.eclipse.jetty.server.Server.new(
       Java::java.net.InetSocketAddress.new(@host, @port)
+    )
+    @server.setAttribute(
+      'org.eclipse.jetty.server.Request.maxFormContentSize',
+      @maxFormSize
     )
     
     handler = LogHandler.new
