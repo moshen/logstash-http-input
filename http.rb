@@ -53,9 +53,9 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
       when 'GET'
         ka = httpRequest.getHeader('Connection')
         if ka and ka.downcase == 'keep-alive'
+          httpResponse.addHeader('Connection', 'Keep-Alive')
           httpResponse.setStatus(200)
         else
-          httpResponse.addHeader('Connection', 'Keep-Alive')
           httpResponse.setStatus(501)
         end
 
