@@ -49,7 +49,9 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
         if scanner.hasNext()
           @codec.clone.decode(scanner.next()) do |event|
             @parent.decorate(event)
-            event["host"] = httpRequest.getRemoteAddr()
+            if !event.include?("host") || event["host"].empty?
+              event["host"] = httpRequest.getRemoteAddr()
+            end
             @output_queue << event
           end
         end
