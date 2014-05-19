@@ -42,6 +42,7 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
     def handle(target, baseRequest, httpRequest, httpResponse)
       case httpRequest.getMethod() 
       when 'PUT', 'POST'
+        setKeepAlive(httpRequest, httpResponse)
         httpResponse.setStatus(200)
         scanner = Java::java.util.Scanner.new(httpRequest.getInputStream(), "UTF-8")
           .useDelimiter("\\A")
@@ -56,12 +57,10 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
           end
         end
 
-      when 'GET'
-        ka = httpRequest.getHeader('Connection')
-        if ka and ka.downcase == 'keep-alive'
+      when 'HEAD', 'GET'
+        if setKeepAlive(httpRequest, httpResponse)
           httpResponse.setStatus(200)
         else
-          httpResponse.addHeader('Connection', 'Keep-Alive')
           httpResponse.setStatus(501)
         end
 
@@ -70,6 +69,16 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
       end
   
       baseRequest.setHandled(true)
+    end
+
+    def setKeepAlive(httpRequest, httpResponse)
+      ka = httpRequest.getHeader('Connection')
+      if ka && ka.downcase == 'keep-alive'
+        httpResponse.addHeader('Connection', 'Keep-Alive')
+        return true
+      else
+        return false
+      end
     end
 
     def setupInput(parent, output_queue)
