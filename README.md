@@ -3,7 +3,7 @@
 ### About
 
 Instantiates Jetty on the specified host and port, and applies the configured
-codec (json by default) to the `PUT` or `POST` request body.
+codec (`plain` by default) to the `PUT` or `POST` request body.
 
 ### Build / Fetch dependencies
 
@@ -13,12 +13,29 @@ This will download the dependencies, add the right jetty version to `http.rb`
 and put `http.rb` in a (somewhat proper) plugin folder:
 `build/plugins/logstash/inputs/`.
 
-### Install / Use
+### Installation
 
 Run `./gradlew install -PinstallDir=dirToCopyTheContentsOfBuildTo` to install.
 
 This will do everything in assemble, but also copy the files to a destination
 of your choosing.  You probably want this to be your logstash install dir.
+
+### Configuration
+
+The default configuration as represented in the logstash configuration file
+format:
+
+    input {
+      http {
+        host => "0.0.0.0"
+        maxFormSize => 200000
+      }
+    }
+
+**host** - The address to listen on.  Default: `"0.0.0.0"`
+**port** - The port to listen on.  No Default, **required**
+**maxFormSize** - [The maximum form size for Jetty in bytes](http://www.eclipse.org/jetty/documentation/current/setting-form-size.html).
+Default `200000` (set to `-1` for no max size)
 
 ### Example
 
@@ -39,22 +56,37 @@ Which should show something like:
     2014-04-01 16:53:43.983:INFO:oejs.ServerConnector:<http: Started ServerConnector@51f061a8{HTTP/1.1}{0.0.0.0:8090}
     2014-04-01 16:53:43.984:INFO:oejs.Server:<http: Started @9526ms
 
-Proceed to post json (by default, other codec messages if configured):
+Proceed to post `plain` (by default, other codec messages if configured):
 
-    curl -d '{ "host": "localhost", "message": "My http logs" }' http://localhost:8090
+    curl -d 'Hello Logstash!' http://localhost:8090
 
-Which should result in the stdout of something like:
+Which should result in the output of something like:
 
     {
-              "host" => "localhost",
-           "message" => "My http logs",
+           "message" => "Hello Logstash!",
           "@version" => "1",
-        "@timestamp" => "2014-04-01T21:58:39.809Z"
+        "@timestamp" => "2014-05-18T22:22:14.064Z",
+              "host" => "0:0:0:0:0:0:0:1"
     }
+
+### Tips / Performance Considerations
+
+Can quickly become overloaded if sending single log messages in each http
+request.  Recommended usage is to use `Keep-Alive` and combine several
+newline-delimited log messages in each `POST` with the
+[`line`](http://logstash.net/docs/1.4.1/codecs/line) or
+[`json_lines`](http://logstash.net/docs/1.4.1/codecs/json_lines) codecs.
 
 ### Issues
 
 Doesn't override the Jetty default logging and Jetty just goes ahead and spits
 out logs to `STDERR`.  I've found this useful for debugging, but may not be the
 desired behavior.
+
+Currently doesn't expose configuration of the Jetty thread pool options.  This
+will probably change in the future.
+
+### License
+
+Apache v2, See LICENSE file
 

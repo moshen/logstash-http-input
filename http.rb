@@ -18,13 +18,16 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
   config_name "http"
   milestone 0
 
-  default :codec, "json"
+  default :codec, "plain"
 
   # The address to listen on.
   config :host, :validate => :string, :default => "0.0.0.0"
 
   # The port to listen on.
   config :port, :validate => :number, :required => true
+
+  # Max form content size in bytes. Set to -1 to disable.
+  config :maxFormSize, :validate => :number, :default => 200000
 
   def initialize(*args)
     super(*args)
@@ -42,12 +45,13 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
         httpResponse.setStatus(200)
         scanner = Java::java.util.Scanner.new(httpRequest.getInputStream(), "UTF-8")
           .useDelimiter("\\A")
-        body = scanner.hasNext() ? scanner.next() : ''
 
-        @codec.clone.decode(body) do |event|
-          @parent.decorate(event)
-          event["host"] = httpRequest.getRemoteAddr()
-          @output_queue << event
+        if scanner.hasNext()
+          @codec.clone.decode(scanner.next()) do |event|
+            @parent.decorate(event)
+            event["host"] = httpRequest.getRemoteAddr()
+            @output_queue << event
+          end
         end
 
       when 'GET'
@@ -82,6 +86,10 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
   def run(output_queue)
     @server = Java::org.eclipse.jetty.server.Server.new(
       Java::java.net.InetSocketAddress.new(@host, @port)
+    )
+    @server.setAttribute(
+      'org.eclipse.jetty.server.Request.maxFormContentSize',
+      @maxFormSize
     )
     
     handler = LogHandler.new
