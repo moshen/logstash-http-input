@@ -29,6 +29,9 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
   # Max form content size in bytes. Set to -1 to disable.
   config :maxFormSize, :validate => :number, :default => 200000
 
+  # Jetty Server Connector acceptQueueSize. 0 uses implementation default.
+  config :acceptQueueSize, :validate => :number, :default => 0
+
   def initialize(*args)
     super(*args)
   end # def initialize
@@ -57,9 +60,9 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
       when 'GET'
         ka = httpRequest.getHeader('Connection')
         if ka and ka.downcase == 'keep-alive'
-          httpResponse.addHeader('Connection', 'Keep-Alive')
           httpResponse.setStatus(200)
         else
+          httpResponse.addHeader('Connection', 'Keep-Alive')
           httpResponse.setStatus(501)
         end
 
@@ -91,6 +94,8 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
       'org.eclipse.jetty.server.Request.maxFormContentSize',
       @maxFormSize
     )
+
+    @server.getConnectors()[0].setAcceptQueueSize(@acceptQueueSize)
     
     handler = LogHandler.new
     handler.setupInput(self, output_queue)
