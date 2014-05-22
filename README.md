@@ -29,13 +29,19 @@ format:
       http {
         host => "0.0.0.0"
         maxFormSize => 200000
+        acceptQueueSize => 0
       }
     }
 
 **host** - The address to listen on.  Default: `"0.0.0.0"`
+
 **port** - The port to listen on.  No Default, **required**
+
 **maxFormSize** - [The maximum form size for Jetty in bytes](http://www.eclipse.org/jetty/documentation/current/setting-form-size.html).
 Default `200000` (set to `-1` for no max size)
+
+**acceptQueueSize** - The accept queue size for the default server connector.
+Default `0` (Which defers to the implementation default, currently `50`)
 
 ### Example
 
