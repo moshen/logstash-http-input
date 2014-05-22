@@ -64,7 +64,6 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
         if setKeepAlive(httpRequest, httpResponse)
           httpResponse.setStatus(200)
         else
-          httpResponse.addHeader('Connection', 'Keep-Alive')
           httpResponse.setStatus(501)
         end
 
