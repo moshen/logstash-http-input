@@ -43,12 +43,20 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
 
   class LogHandler < org.eclipse.jetty.server.handler.AbstractHandler
     def handle(target, baseRequest, httpRequest, httpResponse)
-      case httpRequest.getMethod() 
+      case httpRequest.getMethod()
       when 'PUT', 'POST'
         setKeepAlive(httpRequest, httpResponse)
         httpResponse.setStatus(200)
-        scanner = Java::java.util.Scanner.new(httpRequest.getInputStream(), "UTF-8")
-          .useDelimiter("\\A")
+
+        # check for Content-Encoding
+        if httpRequest.getHeader("Content-Encoding") == "gzip"
+          scanner = Java::java.util.Scanner.new(
+            Java::java.util.zip.GZIPInputStream.new(httpRequest.getInputStream()), "UTF-8")
+            .useDelimiter("\\A")
+        else
+          scanner = Java::java.util.Scanner.new(httpRequest.getInputStream(), "UTF-8")
+            .useDelimiter("\\A")
+        end
 
         if scanner.hasNext()
           @codec.clone.decode(scanner.next()) do |event|
