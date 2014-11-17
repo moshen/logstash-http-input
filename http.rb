@@ -60,7 +60,7 @@ class LogStash::Inputs::Http < LogStash::Inputs::Base
           end
         end
 
-      when 'HEAD', 'GET'
+      when 'HEAD', 'GET', 'OPTIONS'
         if setKeepAlive(httpRequest, httpResponse)
           httpResponse.setStatus(200)
         else
