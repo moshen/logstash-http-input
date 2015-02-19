@@ -5,7 +5,7 @@ apply plugin:'base'
 defaultTasks 'assemble'
 
 // Version to fetch dependencies for, and to inject into http.rb
-def jettyVersion = '9.1.5.v20140505'
+def jettyVersion = '9.2.7.v20150116'
 
 configurations {
   build
