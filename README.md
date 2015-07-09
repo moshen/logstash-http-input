@@ -1,4 +1,10 @@
-## An HTTP input for Logstash (using Jetty)
+## An HTTP input for Logstash <= 1.4.x (using Jetty)
+
+## NOTICE
+
+[Logstash 1.5.0 is introducing an official http input](https://github.com/logstash-plugins/logstash-input-http).
+Considering this, and the fact that I'm no longer using this plugin in my own
+work; I'm recommending >= 1.5.x users should switch to the official plugin.
 
 ### About
 
